@@ -1,13 +1,11 @@
-package tuannguyen.csci342.com.project;
+package tuannguyen.csci342.com.project.activity;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
+import tuannguyen.csci342.com.project.R;
 
 
 public class SplashActivity extends Activity {
