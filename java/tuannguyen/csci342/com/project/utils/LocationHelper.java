@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Created by tuannguyen on 25/09/2015.
- */
+
 public class LocationHelper implements android.location.LocationListener {
     private LocationManager mLocationManager;
     private Context mContext;

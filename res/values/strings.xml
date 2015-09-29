@@ -10,5 +10,8 @@
     <string name="error_location_message">Fail to get current location.</string>
     <string name="ok_button">OK</string>
     <string name="action_refresh">Refresh</string>
+    <string name="error_temperature_message">Unable to get current temperature</string>
+    <string name="no_network_string">No Network Connection</string>
+    <string name="cancel_button">Cancel</string>
 
 </resources>

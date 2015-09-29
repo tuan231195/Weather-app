@@ -1,17 +1,22 @@
 package tuannguyen.csci342.com.project.activity;
 
 import android.app.Activity;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 
 import tuannguyen.csci342.com.project.R;
+import tuannguyen.csci342.com.project.model.Forecast;
 import tuannguyen.csci342.com.project.model.MyApplication;
 import tuannguyen.csci342.com.project.utils.DialogCreator;
 import tuannguyen.csci342.com.project.utils.LocationHelper;
+import tuannguyen.csci342.com.project.utils.TemperatureHelper;
 
 
 public class MainActivity extends Activity {
@@ -19,18 +24,39 @@ public class MainActivity extends Activity {
     private LocationHelper.OnUpdateLocationListener mLocationListener = new LocationHelper.OnUpdateLocationListener() {
         @Override
         public void onLocationUpdate(Location currentLocation) {
-            toggleRefresh(true);
+
             if (currentLocation != null) {
+                mApplication.requestForTemperature(currentLocation);
                 mAddress = mApplication.resolveAddress(currentLocation);
-                Log.d("Current Location", mAddress + ", " + currentLocation);
             } else {
+                toggleRefresh(true);
                 DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.error_location_message), null, getString(R.string.ok_button), null, null, null);
             }
         }
     };
+    private TemperatureHelper.OnTemperatureUpdateListener mTemperatureListener = new TemperatureHelper.OnTemperatureUpdateListener() {
+        @Override
+        public void OnTemperatureUpdate(Forecast data) {
+            mForecast = data;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    toggleRefresh(true);
+                    if (mForecast != null) {
+                        Log.d("Current Weather", mForecast + "");
+                    } else {
+                        DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.error_temperature_message), null, getString(R.string.ok_button), null, null, null);
+                    }
+                }
+            });
+        }
+    };
+
+
     private MyApplication mApplication;
     private String mAddress;
     private MenuItem mRefreshItem;
+    private Forecast mForecast;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,16 +70,34 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         mApplication.setLocationHelperListener(mLocationListener);
+        mApplication.setTemperatureHelper(mTemperatureListener);
+        requestForForecast();
+    }
+
+    private void requestForForecast() {
+        if (!mApplication.checkNetworkInfo())
+        {
+            DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                    startActivity(intent);
+                }
+            };
+            DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.no_network_string), null, "Turn on", listener, getString(R.string.cancel_button), null);
+        }
         toggleRefresh(false);
         mApplication.requestForLocation();
     }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         mRefreshItem = menu.findItem(R.id.action_refresh);
-        mRefreshItem.setVisible(false);
+        if (mApplication.checkNetworkInfo())
+        {
+            mRefreshItem.setVisible(false);
+        }
         return true;
     }
 
@@ -64,7 +108,7 @@ public class MainActivity extends Activity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == R.id.action_refresh)
-            mApplication.requestForLocation();
+            requestForForecast();
         return super.onOptionsItemSelected(item);
     }
 
@@ -72,5 +116,19 @@ public class MainActivity extends Activity {
         setProgressBarIndeterminateVisibility(!visible);
         if (mRefreshItem != null)
             mRefreshItem.setVisible(visible);
+    }
+
+    private void cancelRequest() {
+        mApplication.setLocationHelperListener(null);
+        mApplication.setTemperatureHelper(null);
+    }
+
+    @Override
+    protected void onPause() {
+        //prevent memory leaks
+        cancelRequest();
+        toggleRefresh(true);
+        super.onPause();
+
     }
 }
