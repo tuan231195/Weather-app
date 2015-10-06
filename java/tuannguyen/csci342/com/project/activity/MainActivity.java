@@ -1,17 +1,19 @@
 package tuannguyen.csci342.com.project.activity;
 
-import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
 
 import tuannguyen.csci342.com.project.R;
+import tuannguyen.csci342.com.project.adapter.PagerAdapter;
+import tuannguyen.csci342.com.project.fragments.BaseFragment;
 import tuannguyen.csci342.com.project.model.Forecast;
 import tuannguyen.csci342.com.project.model.MyApplication;
 import tuannguyen.csci342.com.project.utils.DialogCreator;
@@ -19,7 +21,7 @@ import tuannguyen.csci342.com.project.utils.LocationHelper;
 import tuannguyen.csci342.com.project.utils.TemperatureHelper;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
     private LocationHelper.OnUpdateLocationListener mLocationListener = new LocationHelper.OnUpdateLocationListener() {
         @Override
@@ -43,7 +45,12 @@ public class MainActivity extends Activity {
                 public void run() {
                     toggleRefresh(true);
                     if (mForecast != null) {
-                        Log.d("Current Weather", mForecast + "");
+                        mViewPager.setBackgroundResource(0);
+                        mViewPager.setBackgroundResource(mForecast.getCurrent().getBackgroundId());
+                        for (int i = 0; i < mAdapter.getCount(); i++) {
+                            BaseFragment fragment = (BaseFragment) mAdapter.getRegisteredFragment(i);
+                            fragment.onUpdateGUI(mForecast, mAddress);
+                        }
                     } else {
                         DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.error_temperature_message), null, getString(R.string.ok_button), null, null, null);
                     }
@@ -57,6 +64,8 @@ public class MainActivity extends Activity {
     private String mAddress;
     private MenuItem mRefreshItem;
     private Forecast mForecast;
+    private ViewPager mViewPager;
+    private PagerAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +73,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mApplication = (MyApplication) getApplication();
+
+        mViewPager = (ViewPager) findViewById(R.id.viewPager);
+        mViewPager.setOffscreenPageLimit(2);
+        mAdapter = new PagerAdapter(getSupportFragmentManager());
+
+        mViewPager.setAdapter(mAdapter);
     }
 
     @Override
