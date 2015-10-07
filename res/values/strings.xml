@@ -13,5 +13,10 @@
     <string name="error_temperature_message">Unable to get current temperature</string>
     <string name="no_network_string">No Network Connection</string>
     <string name="cancel_button">Cancel</string>
+    <string name="action_subscribe">Receive Notification</string>
+    <string name="notification_title">Today weather</string>
+    <string name="notification_content">"Current temperature is "</string>
+    <string name="notification_ticker">Weather Notification</string>
+    <string name="dialog_daily_notification_title">Receive Daily Notification?</string>
 
 </resources>

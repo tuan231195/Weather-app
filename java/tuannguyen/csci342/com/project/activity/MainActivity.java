@@ -1,15 +1,27 @@
 package tuannguyen.csci342.com.project.activity;
 
+import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Window;
+import android.widget.ListView;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
+import java.util.Calendar;
 
 import tuannguyen.csci342.com.project.R;
 import tuannguyen.csci342.com.project.adapter.PagerAdapter;
@@ -18,10 +30,15 @@ import tuannguyen.csci342.com.project.model.Forecast;
 import tuannguyen.csci342.com.project.model.MyApplication;
 import tuannguyen.csci342.com.project.utils.DialogCreator;
 import tuannguyen.csci342.com.project.utils.LocationHelper;
+import tuannguyen.csci342.com.project.utils.MyReceiver;
 import tuannguyen.csci342.com.project.utils.TemperatureHelper;
 
 
 public class MainActivity extends FragmentActivity {
+
+    private static final String HOUR = "hour";
+    private static final String MINUTE = "minute";
+    private static final String DAILY_NOTIFICATION = "notification";
 
     private LocationHelper.OnUpdateLocationListener mLocationListener = new LocationHelper.OnUpdateLocationListener() {
         @Override
@@ -66,6 +83,8 @@ public class MainActivity extends FragmentActivity {
     private Forecast mForecast;
     private ViewPager mViewPager;
     private PagerAdapter mAdapter;
+    private PendingIntent mIntent;
+    private AlarmManager mAlarmManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +96,11 @@ public class MainActivity extends FragmentActivity {
         mViewPager = (ViewPager) findViewById(R.id.viewPager);
         mViewPager.setOffscreenPageLimit(2);
         mAdapter = new PagerAdapter(getSupportFragmentManager());
+
+        Intent intent = new Intent(this, MyReceiver.class);
+        mIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
 
         mViewPager.setAdapter(mAdapter);
     }
@@ -100,6 +124,7 @@ public class MainActivity extends FragmentActivity {
                 }
             };
             DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.no_network_string), null, "Turn on", listener, getString(R.string.cancel_button), null);
+            return;
         }
         toggleRefresh(false);
         mApplication.requestForLocation();
@@ -124,6 +149,8 @@ public class MainActivity extends FragmentActivity {
         int id = item.getItemId();
         if (id == R.id.action_refresh)
             requestForForecast();
+        if (id == R.id.action_subscribe)
+            displayNotificationDialog();
         return super.onOptionsItemSelected(item);
     }
 
@@ -144,6 +171,68 @@ public class MainActivity extends FragmentActivity {
         cancelRequest();
         toggleRefresh(true);
         super.onPause();
+
+    }
+
+    private void displayNotificationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        final SharedPreferences.Editor editor = prefs.edit();
+        //get the old selection from SharedPreferences
+        int oldSelection = prefs.getInt(DAILY_NOTIFICATION, 1);
+
+        builder.setTitle(getString(R.string.dialog_daily_notification_title));
+        builder.setSingleChoiceItems(new String[]{"Yes", "No"}, oldSelection, null);
+        builder.setPositiveButton(getString(R.string.ok_button), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ListView lv = ((AlertDialog) dialog).getListView();
+                int position = lv.getCheckedItemPosition();
+                editor.putInt(DAILY_NOTIFICATION, position);
+                if (position == 1) {
+                    mAlarmManager.cancel(mIntent);
+                    editor.commit();
+                    //No
+                    dialog.dismiss();
+                } else {
+
+                    Calendar calendar = Calendar.getInstance();
+                    int hour = prefs.getInt(HOUR, calendar.get(Calendar.HOUR_OF_DAY));
+                    int minute = prefs.getInt(MINUTE, calendar.get(Calendar.MINUTE));
+                    //display a dialog with a TimePicker
+                    dialog.dismiss();
+                    TimePickerDialog.OnTimeSetListener mTimeListener = new TimePickerDialog.OnTimeSetListener() {
+                        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                            if (view.isShown()) {
+                                editor.putInt(HOUR, hourOfDay);
+                                editor.putInt(MINUTE, minute);
+                                editor.commit();
+                                startAlarm(hourOfDay, minute);
+                            }
+
+                        }
+                    };
+                    new TimePickerDialog(MainActivity.this, mTimeListener, hour, minute, true).show();
+                }
+            }
+        });
+        builder.setNegativeButton(getString(R.string.cancel_button), null);
+        builder.create().show();
+    }
+
+    private void startAlarm(int hourOfDay, int minute) {
+
+        mAlarmManager.cancel(mIntent);
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, 0);
+        if (calendar.getTimeInMillis() < System.currentTimeMillis())
+        {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+        mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 86400 * 1000, mIntent);
+
 
     }
 }

@@ -14,6 +14,7 @@ import tuannguyen.csci342.com.project.utils.TemperatureHelper;
 public class MyApplication extends Application {
     private LocationHelper mLocationHelper;
     private TemperatureHelper mTemperatureHelper;
+    public static final String PACKAGE_NAME = "tuannguyen.csci342.com.project";
 
     @Override
     public void onCreate() {
