@@ -10,4 +10,8 @@
           android:title = "@string/action_refresh"
           android:showAsAction="always"
           android:icon = "@drawable/ic_menu_refresh"/>
+    <item android:id = "@+id/action_selectLocation"
+          android:title = "@string/selectLocation"
+          app:showAsAction="never"
+          android:orderInCategory="100"/>
 </menu>

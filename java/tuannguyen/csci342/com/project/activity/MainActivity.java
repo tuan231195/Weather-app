@@ -21,7 +21,10 @@ import android.widget.ListView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
+
 import java.util.Calendar;
+import java.util.Date;
 
 import tuannguyen.csci342.com.project.R;
 import tuannguyen.csci342.com.project.adapter.PagerAdapter;
@@ -101,7 +104,6 @@ public class MainActivity extends FragmentActivity {
         mIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
-
         mViewPager.setAdapter(mAdapter);
     }
 
@@ -114,6 +116,18 @@ public class MainActivity extends FragmentActivity {
     }
 
     private void requestForForecast() {
+        LatLng selectedLocation = mApplication.getLocation();
+        if (selectedLocation == null)
+        {
+            requestWeatherForCurrentLocation();
+        }
+        else{
+            //user wants to check the weather at other location
+            requestWeatherForLocation(selectedLocation);
+        }
+    }
+
+    private boolean isNetworkAvailable() {
         if (!mApplication.checkNetworkInfo())
         {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
@@ -124,8 +138,26 @@ public class MainActivity extends FragmentActivity {
                 }
             };
             DialogCreator.createDialog(MainActivity.this, getString(R.string.error_title), getString(R.string.no_network_string), null, "Turn on", listener, getString(R.string.cancel_button), null);
-            return;
+            return false;
         }
+        return true;
+    }
+
+    private void requestWeatherForLocation(LatLng selectedLocation) {
+        if (!isNetworkAvailable()) return;
+        toggleRefresh(false);
+        Location location = new Location("selected location");
+        location.setLatitude(selectedLocation.latitude);
+        location.setLongitude(selectedLocation.longitude);
+        location.setTime(new Date().getTime());
+        mAddress = mApplication.resolveAddress(location);
+        mApplication.requestForTemperature(location);
+    }
+
+
+    public void requestWeatherForCurrentLocation() {
+
+        if (!isNetworkAvailable()) return;
         toggleRefresh(false);
         mApplication.requestForLocation();
     }
@@ -151,6 +183,11 @@ public class MainActivity extends FragmentActivity {
             requestForForecast();
         if (id == R.id.action_subscribe)
             displayNotificationDialog();
+        if (id == R.id.action_selectLocation)
+        {
+            //allow the user to check the weather at a particular location
+            displayLocationDialog();
+        }
         return super.onOptionsItemSelected(item);
     }
 
@@ -234,5 +271,31 @@ public class MainActivity extends FragmentActivity {
         mAlarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), 86400 * 1000, mIntent);
 
 
+    }
+
+    private void displayLocationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select a location");
+        builder.setSingleChoiceItems(new String[]{"Current Location", "Other Location"}, 1, null);
+        builder.setPositiveButton(getString(R.string.ok_button), new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                ListView lv = ((AlertDialog) dialog).getListView();
+                int position = lv.getCheckedItemPosition();
+                if (position == 1) {
+                    //start map activity
+                    Intent i = new Intent(MainActivity.this, MapActivity.class);
+                    startActivity(i);
+                    dialog.dismiss();
+                } else {
+                    //use the current location
+                    mApplication.saveLocation(null);
+                    dialog.dismiss();
+                    requestWeatherForCurrentLocation();
+                }
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.create().show();
     }
 }
