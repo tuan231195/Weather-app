@@ -156,7 +156,6 @@ public class MainActivity extends FragmentActivity {
 
 
     public void requestWeatherForCurrentLocation() {
-
         if (!isNetworkAvailable()) return;
         toggleRefresh(false);
         mApplication.requestForLocation();

@@ -23,7 +23,19 @@ public class ForecastData {
         return mSmallIconId;
     }
 
-
+    @Override
+    public String toString() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE dd/MM/yyyy HH:mm:ss");
+        StringBuilder builder = new StringBuilder();
+        builder.append("\n");
+        builder.append("    " + dateFormat.format(new Date(mTime * 1000)) + "\n");
+        builder.append("    Temperature: " + mTemperature + "°C\n");
+        builder.append("    Humidity: " + mHumid + "\n");
+        builder.append("    Cloud Cover: " + mCloudCover+ "\n");
+        builder.append("    Summary: " + mSummary+ "\n");
+        builder.append("    Wind Speed: " + mWindSpeed+ "\n");
+        return builder.toString();
+    }
 
     public long getTime() {
         return mTime;

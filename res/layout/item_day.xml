@@ -3,41 +3,46 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="horizontal"
-              android:weightSum="7">
+              android:weightSum="7"
+    >
 
     <ImageView
         android:id="@+id/img_icon"
-        android:layout_gravity="center_vertical"
         android:layout_width="0dp"
         android:layout_height="48dp"
-        android:src="@drawable/clearnighticon"
+        android:layout_gravity="center_vertical"
+        android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:layout_weight="1" />
+        android:src="@drawable/clearnighticon"/>
 
-    <TextView
+    <RelativeLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="4"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Tuesday"
-        android:id="@+id/tv_day"
         android:layout_gravity="center_vertical"
-        android:gravity="center_horizontal"
-        android:layout_marginLeft="40dp"
-        android:textColor="#ffffff"
-        android:textStyle="italic" />
+        android:layout_weight="5">
+
+        <TextView
+            android:id="@+id/tv_day"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="Tuesday"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#ffffff"
+            android:textStyle="italic"/>
+    </RelativeLayout>
+
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="20°C"
         android:id="@+id/tv_temp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-
-        android:layout_weight="2"
-        android:layout_marginLeft="40dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:text="20°C"
+        android:textAppearance="?android:attr/textAppearanceMedium"
         android:textColor="#ffffff"
-        android:textStyle="italic" />
+        android:textStyle="italic"/>
 
 </LinearLayout>
